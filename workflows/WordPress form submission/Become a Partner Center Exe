@@ -1,0 +1,273 @@
+(async (workflow, context) => {
+  let queries = [];
+  const {
+    owner_email,
+    owner_first,
+    owner_last,
+    director_email,
+    director_first,
+    director_last,
+    asstdir_email,
+    asstdir_first,
+    asstdir_last,
+    other_email,
+    other_first,
+    other_last,
+    hours_sunday_open,
+    hours_sunday_close,
+    hours_monday_open,
+    hours_monday_close,
+    hours_tuesday_open,
+    hours_tuesday_close,
+    hours_wednesday_open,
+    hours_wednesday_close,
+    hours_thursday_open,
+    hours_thursday_close,
+    hours_friday_open,
+    hours_friday_close,
+    hours_saturday_open,
+    hours_saturday_close,
+    logo_field115, //primaryContact Field
+    ...remainigBody
+  } = workflow.entityInstance.body;
+
+  let centerFields = Object.fromEntries(
+    Object.entries(remainigBody).filter((field) => {
+      return field[0].includes('dont_use') === false;
+    })
+  );
+
+  //settings hours
+  centerFields.logo_field171 = `${hours_sunday_open} - ${hours_sunday_close}`;
+  if (
+    centerFields.logo_field171.startsWith(' ') ||
+    centerFields.logo_field171.endsWith(' ')
+  ) {
+    centerFields.logo_field171 = 'Closed';
+  }
+  centerFields.logo_field173 = `${hours_monday_open} - ${hours_monday_close}`;
+  if (
+    centerFields.logo_field173.startsWith(' ') ||
+    centerFields.logo_field173.endsWith(' ')
+  ) {
+    centerFields.logo_field173 = 'Closed';
+  }
+  centerFields.logo_field175 = `${hours_tuesday_open} - ${hours_tuesday_close}`;
+  if (
+    centerFields.logo_field175.startsWith(' ') ||
+    centerFields.logo_field175.endsWith(' ')
+  ) {
+    centerFields.logo_field175 = 'Closed';
+  }
+  centerFields.logo_field177 = `${hours_wednesday_open} - ${hours_wednesday_close}`;
+  if (
+    centerFields.logo_field177.startsWith(' ') ||
+    centerFields.logo_field177.endsWith(' ')
+  ) {
+    centerFields.logo_field177 = 'Closed';
+  }
+  centerFields.logo_field179 = `${hours_thursday_open} - ${hours_thursday_close}`;
+  if (
+    centerFields.logo_field179.startsWith(' ') ||
+    centerFields.logo_field179.endsWith(' ')
+  ) {
+    centerFields.logo_field179 = 'Closed';
+  }
+  centerFields.logo_field181 = `${hours_friday_open} - ${hours_friday_close}`;
+  if (
+    centerFields.logo_field181.startsWith(' ') ||
+    centerFields.logo_field181.endsWith(' ')
+  ) {
+    centerFields.logo_field181 = 'Closed';
+  }
+  centerFields.logo_field183 = `${hours_saturday_open} - ${hours_saturday_close}`;
+  if (
+    centerFields.logo_field183.startsWith(' ') ||
+    centerFields.logo_field183.endsWith(' ')
+  ) {
+    centerFields.logo_field183 = 'Closed';
+  }
+
+  let staffMap = new Map();
+  if (!!owner_email) {
+    staffMap.set('owner', {
+      first_name: owner_first,
+      last_name: owner_last,
+      work_email: owner_email,
+      contact_field21: 'e146b2f9-bdf3-498d-a338-c53ca014c0d2',
+      related_center_field: 'logo_field110',
+    });
+  }
+  if (!!director_email) {
+    staffMap.set('director', {
+      first_name: director_first,
+      last_name: director_last,
+      work_email: director_email,
+      contact_field21: 'ca2a0a0f-80e2-4674-b00c-4229ada00b79',
+      related_center_field: 'logo_field107',
+    });
+  }
+  if (!!asstdir_email) {
+    staffMap.set('asstdir', {
+      first_name: asstdir_first,
+      last_name: asstdir_last,
+      work_email: asstdir_email,
+      contact_field21: 'f5310fe1-d705-43bc-9889-f7958b89561f',
+      related_center_field: 'logo_field200',
+    });
+  }
+  if (!!other_email) {
+    staffMap.set('other', {
+      first_name: other_first,
+      last_name: other_last,
+      work_email: other_email,
+      contact_field21: '96da8756-387b-4e41-8f92-44e95067d8f6',
+      related_center_field: 'logo_field202',
+    });
+  }
+
+  const findExistingStaff = async (work_email) => {
+    try {
+      const existingStaffQuery = await context.freeagent.listEntityValues({
+        entity: 'contact',
+        filters: [
+          {
+            field_name: 'work_email',
+            operator: 'equals',
+            values: [work_email],
+          },
+        ],
+        limit: 1,
+      });
+      if (existingStaffQuery.count !== 0) {
+        return existingStaffQuery.entity_values[0];
+      }
+      return null;
+    } catch (error) {
+      return error;
+    }
+  };
+
+  const createNewStaff = async (field_values) => {
+    try {
+      const newlyCreatedStaff = await context.freeagent.upsertEntity({
+        entity: 'contact',
+        field_values: field_values,
+      });
+      if (newlyCreatedStaff.count !== 0) {
+        return newlyCreatedStaff.entity_values[0];
+      }
+      return null;
+    } catch (error) {
+      return error;
+    }
+  };
+
+  const findOrCreateStaff = async (staffMap) => {
+    const staffArrayWithIds = await Promise.all(
+      [...staffMap].map(async ([key, staff]) => {
+        let id = '';
+        //query if staff exists
+        const existingStaff = await Promise.resolve(
+          findExistingStaff(staff.work_email)
+        );
+
+        //if staff DOES exists
+        if (!!existingStaff) {
+          // centerFields[staff.related_center_field] =
+          //   existingStaff.id;
+          // queries[`${queries.length + 1}_${key}_listEntityValues`] =
+          // existingStaff;
+          // staff.id = newlyCreatedStaff.id;
+          return {
+            key: key,
+            value: {
+              ...staff,
+              id: existingStaff.id,
+            },
+          };
+        } else {
+          //if staff DOESN'T exist, create
+          const newlyCreatedStaff = await Promise.resolve(
+            createNewStaff(
+              Object.fromEntries(
+                Object.entries(staff).filter(
+                  (field) => field[0] !== 'related_center_field'
+                )
+              )
+            )
+          );
+          if (!!newlyCreatedStaff) {
+            // centerFields[staff.related_center_field] =
+            //   newlyCreatedStaff.id;
+            // queries[`${queries.length + 1}_${key}_createEntity`] =
+            //   newlyCreatedStaff;
+            // staff.id = newlyCreatedStaff.id;
+            return {
+              key: key,
+              value: {
+                ...staff,
+                id: newlyCreatedStaff.id,
+              },
+            };
+          }
+        }
+
+        return {
+          key: key,
+          value: {
+            ...staff,
+            id: '',
+          },
+        };
+      })
+    );
+    return new Map(
+      staffArrayWithIds.map((object) => {
+        return [object.key, object.value];
+      })
+    );
+  };
+
+  const staffMapTwo = await Promise.resolve(findOrCreateStaff(staffMap));
+
+  return {
+    staffMap: Object.fromEntries(staffMap),
+    centerFields: centerFields,
+    staffMapTwo: Object.fromEntries(staffMapTwo),
+  };
+  centerFields.logo_field115 = staffMap[logo_field115].id;
+
+  const existingCenter = await context.freeagent.listEntityValues({
+    entity: 'logo',
+    filters: [
+      {
+        field_name: 'logo_field23',
+        operator: 'equals',
+        values: [remainigBody.logo_field23],
+      },
+    ],
+    limit: 1,
+  });
+
+  if (existingCenter.count !== 0) {
+    const updatedCenter = await context.freeagent.upsertEntity({
+      entity: 'logo',
+      id: existingCenter.id,
+      field_values: centerFields,
+    });
+    queries[`${queries.length + 1}_updatedCenter_upsertEntity`] = updatedCenter;
+  } else {
+    const newCenter = await context.freeagent.upsertEntity({
+      entity: 'logo',
+      field_values: centerFields,
+    });
+    queries[`${queries.length + 1}_newCenter_upsertEntity`] = newCenter;
+  }
+
+  return {
+    staffMap: staffMap,
+    centerFields: centerFields,
+    queries: queries,
+  };
+})(workflow, context);

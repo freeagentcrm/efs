@@ -1,0 +1,47 @@
+{
+  "response": {
+    "status": "OK",
+    "status_code": 200,
+    "message": null,
+    "data": {
+      "id": 1699,
+      "first_name": "Marcos",
+      "last_name": "Chavez",
+      "employee_id": "CON100489",
+      "email": "marcos@llavez.com",
+      "username": null,
+      "activated_at": "2022-12-06 10:05:51",
+      "status": "active",
+      "last_login": "2022-12-06 10:05:51",
+      "gender": null,
+      "birthday": null,
+      "department_id": null,
+      "user_permission": "user",
+      "start_of_employment_at": null,
+      "end_of_employment_at": null,
+      "personal_email": null,
+      "title": "Owner",
+      "phone": null,
+      "phone_code": null,
+      "language": "en",
+      "access_groups": [
+        {
+          "id": 3,
+          "name": "user"
+        }
+      ],
+      "generic_role": null,
+      "country": null,
+      "location": null,
+      "timezone": "Europe/Brussels",
+      "legal": null,
+      "level": null,
+      "initials": null,
+      "sub_company": null,
+      "skill_level": null,
+      "salary_id": null,
+      "team_id": null,
+      "direct_manager_ids": null
+    }
+  }
+}
